@@ -14,6 +14,7 @@ download_dataset_mag.ipynb
 download_dataset_prime.ipynb
 
 .history
+.DS_Store
 
 # Data
 prime/
