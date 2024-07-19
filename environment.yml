@@ -21,7 +21,12 @@ dependencies:
   - transformers
   - pip
   - pip:
+      - neo4j
       - torch
       - torch_geometric
       - torchmetrics
+      - llama-index
+      - llama-index-graph-stores-neo4j 
+      - llama-index-program-openai
+      - llama-index-llms-openai
       - .
