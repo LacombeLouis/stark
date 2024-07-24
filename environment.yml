@@ -22,6 +22,7 @@ dependencies:
   - pip
   - pip:
       - neo4j
+      - python-dotenv
       - torch
       - torch_geometric
       - torchmetrics
