@@ -15,6 +15,7 @@ download_dataset_prime.ipynb
 
 .history
 .DS_Store
+.env
 
 # Data
 prime/
