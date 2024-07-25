@@ -21,7 +21,6 @@ def format_paths(paths):
 
 
 def get_combinations(data):
-    print(len(data))
     # Get combinations of two items from different lists
     list_combinations = [
         (item1, item2)
@@ -38,13 +37,36 @@ def format_links(links):
     return output
 
 
-def limit_paths(paths, relations, limit=1000):
-    # delete the paths that don't contain the relation
-    paths = [path for path in paths if any(relation in path for relation in relations)]
+def delete_paths(paths, relations):
+    return [path for path in paths if any(relation in path for relation in relations)]
 
-    # order the path by the number of relations in the path
-    paths = sorted(paths, key=lambda x: len([relation for relation in relations if relation in x]), reverse=True)
-    paths = paths[:limit]
+
+def limit_paths(paths, relations, relation_score, limit=1000, show=False):
+    if relation_score:
+
+
+        relations_ = relations.relations
+        scores_ = relations.scores
+
+        paths = delete_paths(paths, relations_)
+
+        if show:
+            print("Relations: ", relations_)
+            print("Scores: ", scores_)
+
+        assert len(relations_) == len(scores_), "The number of relations and scores must be the same"
+
+        path_scores = []
+        for path in paths:
+            path_score_ = sum([score for relation, score in zip(relations_, scores_) if relation in path])
+            path_scores.append(path_score_)
+
+        # sort paths the sum in path_scores in descending order
+        paths = sorted(zip(paths, path_scores), key=lambda x: x[1], reverse=True)
+        paths = paths[:limit]
+    else:
+        # delete the paths that don't contain the relation
+        paths = delete_paths(paths, relations)
     return paths
 
 
