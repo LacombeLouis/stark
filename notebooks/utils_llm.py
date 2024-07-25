@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 from tqdm import tqdm
 from utils_prompt_templates import entity_extraction, relation_extraction, relation_extraction_score, question_pydantic, format_prompt_final_question
-from utils_graph_rag import format_ids_output, get_combinations, format_paths, format_links, limit_paths, check_kg_ids, limit_ids
+from utils_graph_rag import format_ids_output, get_combinations, format_paths, format_links, limit_paths, check_kg_ids, limit_ids, limit_links
 from llama_index.llms.openai import OpenAI
 from utils_neo4j import Neo4jApp
 
@@ -165,20 +165,22 @@ class GraphRAG():
 
         # Getting ids
         list_ids = self.find_ids(entities)
-        list_ids = limit_ids(list_ids, limit=350, show=self.show)
+        list_ids = limit_ids(list_ids, show=self.show)
 
         if check_kg_ids(list_ids):
             paths_ = self.get_paths(list_ids)
             if relations:
+                scores_ = None if not self.relation_score else relations.scores
+                relations = relations if not self.relation_score else relations.relations
                 paths_ = limit_paths(
                     paths_,
                     relations,
-                    relation_score=self.relation_score,
-                    limit=250,
+                    scores_,
                     show=self.show
                 )
             context = format_paths(paths_)
         else:
             list_outputs = self.get_links(list_ids[0])
+            list_outputs = limit_links(list_outputs, show=self.show)
             context = format_links(list_outputs)
         return self.ask_question(question, context)

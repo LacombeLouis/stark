@@ -41,32 +41,29 @@ def delete_paths(paths, relations):
     return [path for path in paths if any(relation in path for relation in relations)]
 
 
-def limit_paths(paths, relations, relation_score, limit=1000, show=False):
-    if relation_score:
-
-
-        relations_ = relations.relations
-        scores_ = relations.scores
-
-        paths = delete_paths(paths, relations_)
+def limit_paths(paths, relations, scores, limit=250, show=False):
+    paths = delete_paths(paths, relations)
+    if scores is not None:
 
         if show:
-            print("Relations: ", relations_)
-            print("Scores: ", scores_)
+            print("Relations: ", relations)
+            print("Scores: ", scores)
 
-        assert len(relations_) == len(scores_), "The number of relations and scores must be the same"
+        assert len(relations) == len(scores), "The number of relations and scores must be the same"
 
         path_scores = []
         for path in paths:
-            path_score_ = sum([score for relation, score in zip(relations_, scores_) if relation in path])
-            path_scores.append(path_score_)
+            path_score_ = sum([score for relation, score in zip(relations, scores) if relation in path])
+            if not isinstance(path_score_, float):
+                path_scores.append(0)
+            else:
+                path_scores.append(path_score_)
 
         # sort paths the sum in path_scores in descending order
         paths = sorted(zip(paths, path_scores), key=lambda x: x[1], reverse=True)
         paths = paths[:limit]
     else:
-        # delete the paths that don't contain the relation
-        paths = delete_paths(paths, relations)
+        paths = paths[:limit]
     return paths
 
 
@@ -83,3 +80,29 @@ def limit_ids(list_ids, limit=350, show=False):
     if show:
         print("len of: ", [len(item) for item in list_ids])
     return [item for item in list_ids if len(item) < limit]
+
+
+def delete_links(links, relations):
+    return [link for link in links if any(relation in link for relation in relations)]
+
+
+def limit_links(links, relations, scores, limit=500):
+    links = delete_links(links, relations)
+    if scores is not None:
+
+        assert len(relations) == len(scores), "The number of relations and scores must be the same"
+        link_scores = []
+        for link in links:
+            link_score_ = sum([score for relation, score in zip(relations, scores) if relation in link])
+            if not isinstance(link_score_, float):
+                link_scores.append(0)
+            else:
+                link_scores.append(link_score_)
+        
+        # sort links by the sum in link_scores in descending order
+        links = sorted(zip(links, link_scores), key=lambda x: x[1], reverse=True)
+        links = links[:limit]
+    else:
+        # delete the links that don't contain the relation
+        links = links[:limit]
+    return links
