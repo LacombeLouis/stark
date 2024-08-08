@@ -24,6 +24,7 @@ class Neo4jApp:
             record = self.driver.execute_query(query, database_=self.database)
             return record
         except (DriverError, Neo4jError) as exception:
-            logging.error("%s raised an error: \n%s", query, exception)
-            raise
+            pass
+            # logging.error("%s raised an error: \n%s", query, exception)
+            # raise
 
