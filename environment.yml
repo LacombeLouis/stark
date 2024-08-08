@@ -24,10 +24,12 @@ dependencies:
       - neo4j
       - python-dotenv
       - torch
+      - fpdf2
       - torch_geometric
       - torchmetrics
       - llama-index
-      - llama-index-graph-stores-neo4j 
       - llama-index-program-openai
       - llama-index-llms-openai
+      - llama-index-embeddings-azure-openai
+      - llama-index-llms-azure-openai
       - .
