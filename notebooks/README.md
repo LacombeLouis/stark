@@ -1,6 +1,7 @@
 
 Please do the notebooks in the following order:
-- get all the data from stark
-- prepare_data_KG.ipynb
-- create_KG.ipynb
-- fully_custom_graph_rag.ipynb
+- 1_prepare_data_KG
+- 2_create_KG
+- 3_gather_results
+- 4_match_entities_results
+- 5_evaluation
