@@ -53,17 +53,17 @@ def collect_matching_entities(dict_responses, graph):
         for answer_ in answers_: 
             response = dict_responses[item][answer_]["response"]
             matching_ids = []
-            matching_ids_sim = []
+            # matching_ids_sim = []
             try:
                 for entity in response:
-                    matching_ids.append(find_matching_nlp_entity(entity, graph))
+                    matching_ids.append(find_matching_nlp_entity(entity, graph, return_ID=True))
             except:
                 matching_ids = [["None"]]
             dict_responses[item][answer_]["matching_ids"] = matching_ids
-            try:
-                for entity in response:
-                    matching_ids_sim.append(find_similar_entity(entity, graph, return_ID=True, k=1))
-            except:
-                matching_ids_sim = [["None"]]
-            dict_responses[item][answer_]["matching_ids_sim"] = matching_ids_sim
+            # try:
+            #     for entity in response:
+            #         matching_ids_sim.append(find_similar_entity(entity, graph, return_ID=True, k=1))
+            # except:
+            #     matching_ids_sim = [["None"]]
+            # dict_responses[item][answer_]["matching_ids_sim"] = matching_ids_sim
     return dict_responses
