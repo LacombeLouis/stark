@@ -33,7 +33,7 @@ def flatten(xss):
 
 
 def all_int_in_set(set_):
-    return set([int(x) for x in set_])
+    return set([int(x) for x in set_ if x is not None and x != 'None'])
 
 def change_qa_dataset_to_tuple(qa_dataset):
     new_qa_dataset = []
