@@ -253,15 +253,21 @@ class GraphRAG():
             for list_ in node_ids:
                 for item in list_:
                     params =  {'node_id': item}
-                    response = self.graph.query(query_template, params)
-                    print(response)
-                    list_output.extend([entry['answer'] for entry in response[0]])
+                    try:
+                        response = self.graph.query(query_template, params)
+                        list_output.extend([entry['answer'] for entry in response[0]])
+                    except:
+                        if self.show:
+                            print("Error in response")
         else:
             for item in node_ids:
                 params =  {'node_id': item}
-                response = self.graph.query(query_template, params)
-                print(response)
-                list_output.extend([entry['answer'] for entry in response[0]])
+                try:
+                    response = self.graph.query(query_template, params)
+                    list_output.extend([entry['answer'] for entry in response[0]])
+                except:
+                    if self.show:
+                        print("Error in response")
         return list_output
 
 
