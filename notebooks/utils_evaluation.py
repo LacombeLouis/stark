@@ -1,15 +1,13 @@
 from tqdm import tqdm
 import os
-from utils_graph_rag import find_similar_entity, find_matching_nlp_entity
-from stark_qa import load_qa, load_skb
+from utils_graph_rag import find_full_text_entity, find_similar_entity
+from stark_qa import load_skb
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
 dataset_name = os.getenv("dataset_name")
-
-
 skb = load_skb(dataset_name, download_processed=False, root='../')
 
 def collect_responses(qa_dataset, graph_rag, dict_=None):
@@ -45,7 +43,8 @@ def collect_responses(qa_dataset, graph_rag, dict_=None):
         }
     return dict_responses
 
-def collect_matching_entities(dict_responses, graph):
+
+def collect_matching_entities(dict_responses, graph, get_similar_entities=False):
     for item in tqdm(dict_responses.keys()):
         # get list of answers in the dictionary if type is dict
         answers_ = [answer_ for answer_ in dict_responses[item].keys() if type(dict_responses[item][answer_]) == dict]
@@ -53,17 +52,24 @@ def collect_matching_entities(dict_responses, graph):
         for answer_ in answers_: 
             response = dict_responses[item][answer_]["response"]
             matching_ids = []
-            # matching_ids_sim = []
-            try:
-                for entity in response:
-                    matching_ids.append(find_matching_nlp_entity(entity, graph, return_ID=True))
-            except:
+            if response is None:
+                print(f"no response for {item}")
                 matching_ids = [["None"]]
-            dict_responses[item][answer_]["matching_ids"] = matching_ids
-            # try:
-            #     for entity in response:
-            #         matching_ids_sim.append(find_similar_entity(entity, graph, return_ID=True, k=1))
-            # except:
-            #     matching_ids_sim = [["None"]]
-            # dict_responses[item][answer_]["matching_ids_sim"] = matching_ids_sim
+            else:
+                for entity in response:
+                    try:
+                        matched_ids = find_full_text_entity(entity, graph, top_k=1, return_ID=True)
+                        matching_ids.append(matched_ids)
+                    except:
+                        matching_ids.append(["None"])
+                dict_responses[item][answer_]["matching_ids"] = matching_ids
+            if get_similar_entities:
+                matching_ids_sim = []
+                for entity in response:
+                    try:
+                        matched_ids = find_similar_entity(entity, graph, return_ID=True, top_k=1, clean_results=False)
+                        matching_ids_sim.append(matched_ids)
+                    except:
+                        matching_ids_sim.append(["None"])
+                dict_responses[item][answer_]["matching_ids_sim"] = matching_ids_sim
     return dict_responses
