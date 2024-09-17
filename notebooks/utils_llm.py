@@ -242,7 +242,7 @@ class GraphRAG():
         else:
             query_template = """
             MATCH (e1:Entity)-[rel]->(connected)
-            WHERE elementId(e1) = $entity
+            WHERE elementId(e1) = $node_id
             RETURN e1.name + ' -> ' + type(rel) + ' -> ' + connected.name AS answer
             """
 
