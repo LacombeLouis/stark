@@ -11,13 +11,6 @@ from utils_graph_rag import get_embedding
 
 load_dotenv()
 
-# llm = OpenAI(model=os.getenv("model"), temperature=os.getenv("temperature"))
-
-load_dotenv()
-
-
-# client = OpenAI()
-    
 llm = AzureOpenAI(
     model=os.getenv("model"),
     deployment_name="gpt4o",
@@ -27,7 +20,7 @@ llm = AzureOpenAI(
     temperature=os.getenv("temperature"),
 )
 
-prompt_new_final_question_ = """
+prompt_llm_alone = """
 You are a virtual assistant specialized in aiding biomedical professionals by providing comprehensive, relevant, highly detailed, and well-justified answers to their questions. As an expert in biomedical sciences and healthcare, you will always respond with a professional tone and language.
 
 Think step-by-step and thoroughly analyze all the context before answering.
@@ -71,13 +64,13 @@ class GPT4Question(BaseModel):
 
 def question_pydantic_direct(question: str, llm=llm) -> List[str]:
     pydantic_ = OpenAIPydanticProgram.from_defaults(
-        output_cls=GPT4Question, prompt_template_str=prompt_new_final_question_, llm=llm
+        output_cls=GPT4Question, prompt_template_str=prompt_llm_alone, llm=llm
     )
     result = pydantic_(question=question)
     return result.answer
 
 
-DEFAULT_SYSTEM_MESSAGE_PROMPT_TEMPLATE = """ 
+prompt_template_shortest_path = """ 
 You are a virtual assistant designed to assist biomedical professionals by providing precise, relevant, and well-justified answers to their inquiries. You are an expert in biomedical sciences and healthcare.
 
 ### Guidelines:
@@ -130,7 +123,7 @@ You are a virtual assistant designed to assist biomedical professionals by provi
 """
 
 
-prompt_final_link_question_ = """
+prompt_template_link = """
 You are a virtual assistant designed to assist biomedical professionals by providing precise, relevant, and well-justified answers to their inquiries. You are an expert in biomedical sciences and healthcare.
 
 ### Guidelines:
@@ -180,12 +173,14 @@ Context:
 """
 
 
-
-def format_prompt_final_question(question: str, context: str, use_links: bool) -> str:
-    if use_links:
-        return prompt_final_link_question_.format(question=question, context=context)
+def format_prompt_final_question(question: str, context: str, use_path: bool) -> str:
+    """
+    This function is not used directly by the LLM but is used to generate the prompt and save it
+    """
+    if use_path:
+        return prompt_template_link.format(question=question, context=context)
     else:
-        return DEFAULT_SYSTEM_MESSAGE_PROMPT_TEMPLATE.format(question=question, context=context)
+        return prompt_template_shortest_path.format(question=question, context=context)
 
 
 class FinalQuestion(BaseModel):
@@ -193,11 +188,11 @@ class FinalQuestion(BaseModel):
     answer: Optional[List[str]]
 
 
-def question_pydantic(question: str, context: str, use_links: bool, llm=llm) -> List[str]:
-    if use_links:
-        prompt_ = prompt_final_link_question_
+def question_pydantic(question: str, context: str, use_path: bool, llm=llm) -> List[str]:
+    if use_path:
+        prompt_ = prompt_template_shortest_path
     else:
-        prompt_ = DEFAULT_SYSTEM_MESSAGE_PROMPT_TEMPLATE
+        prompt_ = prompt_template_link
     pydantic_ = OpenAIPydanticProgram.from_defaults(
         output_cls=FinalQuestion, prompt_template_str=prompt_, llm=llm
     )
@@ -211,19 +206,28 @@ class Entities(BaseModel):
 
 
 prompt_template_entities = """
-Extract all medical-related named entities such as names of diseases, medications,
-medical procedures, anatomical terms, medical conditions, medical associations, etc.
+Extract all medical-related named entities from the following text. This includes:
 
-For example, in the question:
-The protein encoded by HIF3A is associated with negative regulation of what?
-The named entities are: HIF3A, protein, negative regulation
+- **Diseases/Medical Conditions**: Names of diseases, syndromes, disorders, and medical conditions (e.g., diabetes mellitus, retinopathy, heart failure, ...).
+- **Medications/Drugs**: Any pharmaceutical treatments, medications, or drugs (e.g., insulin, metformin, ...).
+- **Medical Procedures/Interventions**: Names of surgeries, treatments, or interventions (e.g., bypass surgery, chemotherapy, ...).
+- **Anatomical Terms**: Body parts, organs, tissues, or other anatomical structures (e.g., kidney, retina, ...).
+- **Medical Associations or Pathways**: Relationships or pathways associated with biological processes or conditions (e.g., protein, gene regulation, inflammation).
+- **Complications**: Any associated conditions or secondary complications resulting from a disease or condition (e.g., diabetic nephropathy, neuropathy).
+- **Other Medical Terms**: Any other relevant medical terminologies (e.g., pathway, gene, biomarkers, receptors, ... ).
 
-Which pharmacological treatments are recommended for managing diabetes mellitus and its associated complications such as diabetic nephropathy and retinopathy?
-The named entities are: pharmacological treatments, diabetes mellitus, complications, diabetic nephropathy, retinopathy
+For example, in the sentence:
+- "The protein encoded by **HIF3A** is associated with **negative regulation** of what?"
+  The named entities are: **HIF3A**, **protein**, **negative regulation**.
 
-Do the same for the following text:
+In the question:
+- "Which **pharmacological treatments** are recommended for managing **diabetes mellitus** and its associated complications such as **diabetic nephropathy** and **retinopathy**?"
+  The named entities are: **pharmacological treatments**, **diabetes mellitus**, **complications**, **diabetic nephropathy**, **retinopathy**.
+
+Now, extract the named entities from the following text:
 {text}
 """
+
 
 def entity_extraction(text: str, llm=llm) -> List[str]:
     pydantic_ = OpenAIPydanticProgram.from_defaults(
@@ -231,9 +235,3 @@ def entity_extraction(text: str, llm=llm) -> List[str]:
     )
     result = pydantic_(text=text)
     return result.entities
-
-
-def embedding_relation_extraction_score(text: str, list_relations_emb) -> dict:
-    text_emb = get_embedding(text)
-    cosine_similarities = np.dot(text_emb, np.array(list_relations_emb).T)
-    return cosine_similarities
