@@ -173,7 +173,7 @@ class GraphRAG():
         return kg_ids
 
 
-    def get_paths(self, kg_ids, max_distance=50, add_node_type=False):
+    def get_paths(self, node_ids, add_node_type=False):
         """
         Get the paths between the entities in the knowledge graph
 
@@ -188,8 +188,8 @@ class GraphRAG():
         if add_node_type:
             query_template = """
             MATCH (e1:Entity), (e2:Entity),
-            p = shortestPath((e1)-[*..$max_distance]-(e2))
-            WHERE elementId(e1) = "$node_id1" AND elementId(e2) = "node_id2"
+            p = shortestPath((e1)-[*..50]-(e2))
+            WHERE elementId(e1) = $node_id1 AND elementId(e2) = $node_id2
             WITH [node IN nodes(p) | node.name + " (" + node.type + ") "] AS nodes, [rel IN relationships(p) | type(rel)] AS rels
             WITH apoc.coll.flatten(apoc.coll.zip(nodes, rels + [""])) AS elements
             RETURN apoc.text.join(elements[0..-1], " -> ") AS answer
@@ -197,20 +197,19 @@ class GraphRAG():
         else:
             query_template = """
             MATCH (e1:Entity), (e2:Entity),
-            p = shortestPath((e1)-[*..$max_distance]-(e2))
-            WHERE elementId(e1) = "$node_id1" AND elementId(e2) = "node_id2"
+            p = shortestPath((e1)-[*..50]-(e2))
+            WHERE elementId(e1) = $node_id1 AND elementId(e2) = $node_id2
             WITH [node IN nodes(p) | node.name] AS nodes, [rel IN relationships(p) | type(rel)] AS rels
             WITH apoc.coll.flatten(apoc.coll.zip(nodes, rels + [""])) AS elements
             RETURN apoc.text.join(elements[0..-1], " -> ") AS answer
             """
 
-        all_combinations = get_combinations(kg_ids)
+        all_combinations = get_combinations(node_ids)
         for item in tqdm(all_combinations, total=len(all_combinations), disable=not self.show):
             node_id1, node_id2 = item
             params =  {
                 'node_id1': node_id1,
                 'node_id2': node_id2,
-                'max_distance': max_distance
             }
 
             try:
@@ -222,7 +221,7 @@ class GraphRAG():
         return paths_
 
 
-    def get_links(self, entity, add_node_type=False):
+    def get_links(self, node_ids, add_node_type=False):
         """
         Get the links of the entities in the knowledge graph
 
@@ -237,29 +236,31 @@ class GraphRAG():
         if add_node_type:
             query_template = """
             MATCH (e1:Entity)-[rel]->(connected)
-            WHERE elementId(e1) = '{entity}'
+            WHERE elementId(e1) = $node_id
             RETURN e1.name + ' ('+ e1.type + ') ' + ' -> ' + type(rel) + ' -> ' + connected.name + ' ('+ connected.type + ') ' AS answer
             """
         else:
             query_template = """
             MATCH (e1:Entity)-[rel]->(connected)
-            WHERE elementId(e1) = '{entity}'
+            WHERE elementId(e1) = $entity
             RETURN e1.name + ' -> ' + type(rel) + ' -> ' + connected.name AS answer
             """
 
         def is_list_of_lists(lst):
             return all(isinstance(i, list) for i in lst)
 
-        if is_list_of_lists(entity):
-            for list_ in entity:
+        if is_list_of_lists(node_ids):
+            for list_ in node_ids:
                 for item in list_:
-                    params =  {'entity': item}
+                    params =  {'node_id': item}
                     response = self.graph.query(query_template, params)
+                    print(response)
                     list_output.extend([entry['answer'] for entry in response[0]])
         else:
-            for item in entity:
-                params =  {'entity': item}
+            for item in node_ids:
+                params =  {'node_id': item}
                 response = self.graph.query(query_template, params)
+                print(response)
                 list_output.extend([entry['answer'] for entry in response[0]])
         return list_output
 
