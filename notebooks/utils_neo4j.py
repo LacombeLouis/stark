@@ -19,12 +19,14 @@ class Neo4jApp:
         except Exception as e:
             logging.error("Connection to Neo4j failed: %s", e)
 
-    def query(self, query):
+    def query(self, query, parameters=None):
         try:
-            record = self.driver.execute_query(query, database_=self.database)
+            if parameters is not None:
+                record = self.driver.execute_query(query, parameters, database_=self.database)
+            else:
+                record = self.driver.execute_query(query, database_=self.database)
             return record
         except (DriverError, Neo4jError) as exception:
             pass
             # logging.error("%s raised an error: \n%s", query, exception)
             # raise
-
